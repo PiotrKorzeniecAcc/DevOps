@@ -1,10 +1,58 @@
+version: '3'
+
 services:
-  web:
-    build:
-      context: app
-      target: builder
-    stop_signal: SIGINT
+  sonarqube:
+    image: sonarqube
     ports:
-      - '5000:5000'
+      - "9000:9000"
+    environment:
+      - SONARQUBE_JDBC_USERNAME=sonarqube
+      - SONARQUBE_JDBC_PASSWORD=sonarqube
+      - SONARQUBE_JDBC_URL=jdbc:postgresql://db:5432/sonarqube
+    networks:
+      - sonarnet
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - sonarqube_conf:/opt/sonarqube/conf
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_bundled-plugins:/opt/sonarqube/lib/bundled-plugins
+
+  db:
+    image: postgres:alpine
+    environment:
+      - POSTGRES_USER=sonarqube
+      - POSTGRES_PASSWORD=sonarqube
+    networks:
+      - sonarnet
+    volumes:
+      - postgresql:/var/lib/postgresql
+
+  jenkins:
+    image: jenkins/jenkins
+    ports:
+      - "8080:8080"
+    networks:
+      - sonarnet
+    volumes:
+      - jenkins_home:/var/jenkins_home
+
+  # Your application service
+  flask_python-web:
+    image: flask_python-web
+    ports:
+      - "5000:5000"
+    networks:
+      - sonarnet
+
+# Define a custom network
+networks:
+  sonarnet:
+
+# Define volumes for SonarQube, PostgreSQL, and Jenkins
+volumes:
+  sonarqube_conf:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_bundled-plugins:
+  postgresql:
+  jenkins_home:

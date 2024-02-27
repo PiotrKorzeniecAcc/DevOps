@@ -8,5 +8,12 @@ pipeline {
                 checkout scm
             }
         }
+	stage('SonarQube') {
+		steps {
+			withSonarQubeEnv(installationName: 'sonarqube-server') {
+				sh 'mvn sonar:sonar'
+			}
+		}
+	}
     }
 }
